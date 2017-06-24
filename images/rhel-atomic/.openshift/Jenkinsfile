@@ -1,0 +1,26 @@
+node {
+    def imageName = "rhel-atomic"
+
+    // TODO: use last tag + 1
+    echo 'Build No: ' + env.BUILD_NUMBER + '. Build URL: ' + env.BUILD_URL
+
+   stage('Build image') {
+     openshiftBuild (
+       bldCfg: imageName,
+       checkForTriggeredDeployments: 'false',
+       showBuildLogs: 'true',
+       verbose: 'true'
+     )
+  }
+
+  stage('Tag build image') {
+    openshiftTag (
+      destStream: imageName,
+      destTag: env.BUILD_NUMBER,
+      srcStream: imageName,
+      srcTag: 'latest',
+      verbose: 'true',
+      alias: 'false'
+    )
+  }
+}
