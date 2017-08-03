@@ -1,0 +1,6 @@
+.git/**
+.openshift/**
+.s2iignore
+Dockerfile*
+Makefile
+README.md
