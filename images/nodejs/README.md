@@ -61,8 +61,42 @@ _*Caution:*_ If you choose the `postCommit` hook strategy, be sure that you are 
 ### S2I Run Script
 The default `run` script provided will, switch to the the `OPENSHIFT_DEPLOYMENTS_DIR` and execute `npm start`. You can configure the `npm` command to execute by specifying `NPM_START` environment variable and any arguments to `start` by specifying `NPM_START_ARGS` environment variable.
 
+### Extended Builds
+A nifty feature of OpenShift build (via source-to-image) is [extended builds](https://docs.openshift.com/container-platform/3.5/dev_guide/builds/build_strategies.html#extended-builds). The following snippent demonstrates how this can be used, in this particular case a Node.JS codebase is built using the `Source` strategy within the `nodejs-7-s2i` image. Once the assemble stage is completed, artifacts from `/opt/openshift` is copied over to `opt/openshift` in an instance of `nodejs-7` container for s2i run stage. Note that the relative path is used in the latter.
+
+```yaml
+strategy:
+  type: Source
+  sourceStrategy:
+    from:
+      kind: ImageStreamTag
+      namespace: openshift
+      name: 'nodejs-7-s2i:latest'
+    runtimeImage:
+      kind: "ImageStreamTag"
+      name: "nodejs-7:latest"
+      namespace: openshift
+    runtimeArtifacts:
+      - sourcePath: "/opt/openshift"
+        destinationDir: "opt/"
+      - sourcePath: /usr/libexec/s2i
+        destinationDir: usr/libexec/
+```
+
 ### Local S2I Build Example
 To use these source-to-image containers to build a working copy of your Node.JS source, you can execute the following command.
 ```sh
 s2i build -e DEBUG=1 -e NPM_SCRIPT_TEST=test <path/to/working/copy> <registry>/<namespace>/nodejs-6-s2i:latest local/my-super-app
+```
+
+The following example shows how an runtime image can be used.
+
+```sh
+s2i build \
+  . \
+  docker-registry/openshift/nodejs-7-s2i:latest \
+  --runtime-image docker-registry./openshift/nodejs-7:latest \
+  --runtime-artifact /opt/openshift:opt/openshift \
+  --runtime-artifact /usr/libexec/s2i:usr/libexec/s2i \
+  local/my-awesome-app
 ```
